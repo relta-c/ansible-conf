@@ -1,0 +1,42 @@
+---
+#   Copyright 2019 Nattakit Hosapsin
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+# defaults variables for gentoo-init
+
+# connection
+system_fallback_port: 22
+system_ssh_timeout: 5
+system_connect_timeout: 10
+
+# sshd config
+sshd_permit_root_login: "without-password"
+sshd_password_authentication: "no"
+
+# hostname
+system_hostname: localhost
+system_localdomain: local
+system_domain: "{{ system_localdomain }}"
+system_fqdn: "{{ system_hostname }}.{{ system_domain }}"
+
+# hosts
+system_host_entries:
+  - { ip: "127.0.0.1", name: "localhost {{ system_hostname }}", state: "present"}
+  - { ip: "::1", name: "", state: "absent" }
+  - { ip: "{{ ansible_default_ipv4.address }}", name: "{{ system_fqdn }} {{ system_hostname }}.{{ system_localdomain }} {{ system_hostname }}", state: "present"}
+
+# timezone
+system_timezone: "Etc/UTC"
+
+...

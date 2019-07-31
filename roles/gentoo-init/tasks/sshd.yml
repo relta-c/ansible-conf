@@ -1,0 +1,110 @@
+---
+#   Copyright 2019 Nattakit Hosapsin
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+# tasks file for gentoo-init
+
+- name: set ssh port fact
+  set_fact:
+    ssh_port_found: false
+    configured_port: "{{ ansible_port }}"
+
+- name: check if ssh is listening on configured port
+  wait_for:
+    port: "{{ configured_port }}"
+    state: "started"
+    host: "{{ inventory_hostname }}"
+    connect_timeout: "{{ system_ssh_timeout }}"
+    timeout: "{{ system_connect_timeout }}"
+  delegate_to: "localhost"
+  ignore_errors: "yes"
+  register: configured_ssh
+
+- name: ssh port is already configured
+  set_fact:
+    ssh_port_found: true
+  when: configured_ssh is defined and
+        configured_ssh.state is defined and
+        configured_ssh.state == "started"
+
+- name: check if ssh is litening on default port
+  wait_for:
+    port: "{{ system_fallback_port }}"
+    state: "started"
+    host: "{{ inventory_hostname }}"
+    connect_timeout: "{{ system_ssh_timeout }}"
+    timeout: "{{ system_connect_timeout }}"
+  delegate_to: "localhost"
+  ignore_errors: "yes"
+  register: default_ssh
+  when: configured_ssh is defined and
+        configured_ssh.state is undefined
+
+- name: set inventory ansible_port to default ssh port
+  set_fact:
+    ansible_port: "{{ system_fallback_port }}"
+    ssh_port_found: true
+  when: default_ssh is defined and
+        default_ssh.state is defined and
+        default_ssh.state == "started"
+
+- name: unkown ssh port
+  fail:
+    msg: "The SSH port is neither {{ system_fallback_port }} or {{ ansible_port }}."
+  when: ssh_port_found == false
+
+- name: configure ssh port
+  become: yes
+  lineinfile:
+    dest: "{{ sshd_config_path }}"
+    regexp: "(^#?Port)"
+    line: "Port {{ configured_port }}"
+  notify: "sshd - restart"
+  when: default_ssh is defined and
+        default_ssh.state is defined and
+        default_ssh.state == "started" and
+        ssh_port_found == true
+
+- name: configure sshd config file
+  become: yes
+  block:
+    - name: set permit root login to "{{ sshd_permit_root_login }}"
+      lineinfile:
+        dest: "{{ sshd_config_path }}"
+        regexp: "(^#?PermitRootLogin)"
+        line: "PermitRootLogin {{ sshd_permit_root_login }}"
+        validate: "sshd -t -f %s"
+      notify: "sshd - restart"
+    - name: set allow password to "{{ sshd_password_authentication }}"
+      lineinfile:
+        dest: "{{ sshd_config_path }}"
+        regexp: "(^#?PasswordAuthentication)"
+        line: "PasswordAuthentication {{ sshd_password_authentication }}"
+        validate: "sshd -t -f %s"
+      notify: "sshd - restart"
+
+- name: ensure sshd is reloaded if need be
+  meta: flush_handlers
+
+- name: check host connection
+  ping:
+
+- name: set configured port to ansible_port
+  set_fact:
+    ansible_port: "{{ configured_port }}"
+
+- name: gather facts about the host
+  setup:
+
+...

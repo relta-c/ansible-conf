@@ -1,0 +1,35 @@
+---
+#   Copyright 2019 Nattakit Hosapsin
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+# tasks file for gentoo-init
+
+- name: check for localtime file
+  stat: path=/etc/localtime
+  register: localtime_file
+
+- name: remove localtime file if not symlink
+  become: yes
+  file: path=/etc/localtime state=absent
+  when: localtime_file.stat.exists and not localtime_file.stat.islnk
+
+- name: set system localtime to "{{ system_timezone }}"
+  become: yes
+  file:
+    src: /usr/share/zoneinfo/{{ system_timezone }}
+    dest: /etc/localtime
+    state: link
+  notify: system - timezone
+
+...
