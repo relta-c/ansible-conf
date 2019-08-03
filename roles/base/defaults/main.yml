@@ -13,8 +13,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# defaults variables for base
-
 # connection
 system_fallback_port: 22
 system_ssh_timeout: 5

@@ -13,8 +13,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# tasks file for gentoo-init
-
 - name: set ssh port fact
   set_fact:
     ssh_port_found: false

@@ -13,8 +13,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# tasks file for gentoo-init
-
 - name: make sure gentoolkit is installed
   become: yes
   command: equery --version

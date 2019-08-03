@@ -13,8 +13,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# handlers file for base
-
 - name: sshd - restart
   become: yes
   service:

@@ -13,8 +13,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# tasks file for gentoo-init
-
 # timezone module don't seem to works for gentoo
 
 - name: check for localtime file

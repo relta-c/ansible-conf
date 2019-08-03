@@ -13,8 +13,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# vars file for base
-
 sshd_config_path: "/etc/ssh/sshd_config"
 
 portage_config_path: "/etc/portage/make.conf"
