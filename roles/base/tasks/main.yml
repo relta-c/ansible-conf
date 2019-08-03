@@ -13,14 +13,20 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# tasks file for gentoo-init
+# tasks file for base
 
-- name: set hostname to "{{ system_hostname }}"
-  become: yes
-  hostname: name="{{ system_hostname | default(localhost) }}"
+- import_tasks: sshd.yml
 
-- name: write hostname file
-  become: yes
-  copy: content="{{ system_hostname | default(localhost) }}\n" dest="/etc/hostname"
+- import_tasks: bootstrap.yml
+
+- import_tasks: hostname.yml
+
+- import_tasks: hosts.yml
+
+- import_tasks: timezone.yml
+
+- import_tasks: portage.yml
+
+- import_tasks: monit.yml
 
 ...

@@ -13,18 +13,33 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# tasks file for gentoo-init
+# handlers file for base
 
-- import_tasks: sshd.yml
+- name: sshd - restart
+  become: yes
+  service:
+    name: sshd
+    state: restarted
 
-- import_tasks: bootstrap.yml
+- name: monit - start
+  become: yes
+  service:
+    name: monit
+    state: started
 
-- import_tasks: hostname.yml
+- name: monit - reload
+  become: yes
+  command: "monit reload"
+  
+- name: system - locale
+  become: yes
+  shell: env-update && source /etc/profile
 
-- import_tasks: hosts.yml
+- name: system - timezone
+  become: yes
+  shell: "emerge --config timezone-data"
 
-- import_tasks: timezone.yml
-
-- import_tasks: portage.yml
+- name: system - reboot
+  reboot:
 
 ...

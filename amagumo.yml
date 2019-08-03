@@ -19,6 +19,6 @@
   tasks:
   - name: base - prepare base system
     include_role:
-      name: gentoo-init
+      name: base
 
 ...

@@ -1,0 +1,49 @@
+---
+#   Copyright 2019 Nattakit Hosapsin
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+- name: ensure monit start at boot
+  become: yes
+  lineinfile:
+    dest: /etc/inittab
+    regexp: "mo:2345:respawn:/usr/bin/monit -Ic /etc/monitrc"
+    line: "mo:2345:respawn:/usr/bin/monit -Ic /etc/monitrc"
+  notify: system - reboot
+
+- name: make monit include config file from monit.d
+  become: yes
+  lineinfile:
+    dest: "/etc/monitrc"
+    regexp: "^#?.*include /etc/monit.d"
+    line: "include /etc/monit.d/*"
+
+- name: ensure monit.d exsit
+  become: yes
+  file:
+    path: "/etc/monit.d"
+    state: directory
+
+- name: configure monit
+  become: yes
+  copy:
+    remote_src: no
+    src: "{{ role_path }}/files/monit-base"
+    dest: /etc/monit.d/base
+    owner: root
+    group: root
+    mode: 0600
+    validate: "monit -tc %s"
+  notify: monit - reload
+
+...

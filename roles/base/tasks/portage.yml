@@ -1,0 +1,123 @@
+---
+#   Copyright 2019 Nattakit Hosapsin
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+# tasks file for gentoo-init
+
+- name: configure portage
+  become: yes
+  block:
+    - name: make backup for portage config file
+      copy:
+        remote_src: yes
+        src: "{{ portage_config_path }}"
+        dest: "{{ portage_config_path }}.bak"
+        owner: root
+        group: root
+        mode: 0644
+      
+    - name: set c and cxx flags to "{{ portage_c_flags }}"
+      lineinfile:
+        dest: "{{ portage_config_path }}"
+        regexp: "^#?CFLAGS="
+        line: 'CFLAGS="{{ portage_c_flags }}"'
+      
+    - name: set use flags to "{{ portage_use_flags }}"
+      lineinfile:
+        dest: "{{ portage_config_path }}"
+        regexp: "^#?USE="
+        line: 'USE="{{ portage_use_flags }}"'
+      register: portage_use_ret
+      
+    - name: set makeopts flags to "{{ portage_makeopts_flags }}"
+      lineinfile:
+        dest: "{{ portage_config_path }}"
+        regexp: "^#?MAKEOPTS="
+        line: 'MAKEOPTS="{{ portage_makeopts_flags }}"'
+
+    - name: set emerge default options
+      lineinfile:
+        dest: "{{ portage_config_path }}"
+        regexp: "^#?EMERGE_DEFAULT_OPTS"
+        line: 'EMERGE_DEFAULT_OPTS="{{ portage_default_opts }}"'
+        
+# TODO: find a better way to validate this file
+    - name: validate portage config file
+      command: "emerge --info"
+      changed_when: no
+      
+  rescue:
+    - name: restore portage backup config file
+      become: yes
+      copy:
+        remote_src: yes
+        src: "{{ portage_config_path }}.bak"
+        dest: "{{ portage_config_path }}"
+
+    - name: validate portage backup config file
+      command: "emerge --info"
+      changed_when: false
+
+- name: create a directory for kernel hook if it does not exist
+  file:
+    path: "/etc/portage/env/sys-kernel"
+    state: directory
+
+- name: install kernel auto build hook
+  become: yes
+  copy:
+    remote_src: no
+    src: "{{ role_path }}/files/portage-hook-kernel.sh"
+    dest: "/etc/portage/env/sys-kernel/gentoo-sources"
+
+- name: set portage profile to "{{ portage_profile }}"
+  become: yes
+  file:
+    src: "{{ portage_profile_path }}{{ portage_profile }}"
+    dest: /etc/portage/make.profile
+    state: link
+  register: portage_profile_ret
+# Use cron to sync portage
+- name: rebuild packages for new use flags
+  become: yes
+  portage:
+    newuse: yes
+    deep: yes
+    package: "@world"
+    update: yes
+  when: portage_profile_ret.changed or
+        portage_use_ret.changed
+
+- name: create a directory for sets if it does not exist
+  file:
+    path: "/etc/portage/sets"
+    state: directory
+
+- name: install admin package set file
+  become: yes
+  copy:
+    remote_src: no
+    src: "{{ role_path }}/files/portage-set-admin"
+    dest: "/etc/portage/sets/admin"
+  register: admin_set_ret
+
+- name: install admin package set
+  become: yes
+  portage:
+    package: "@admin"
+    noreplace: yes
+  when: admin_set_ret.changed
+  notify: monit - start
+ 
+...

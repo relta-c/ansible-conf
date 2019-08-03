@@ -13,20 +13,16 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# handlers file for gentoo-init
+# tasks file for gentoo-init
 
-- name: sshd - restart
+- name: write hostname file
   become: yes
-  service:
-    name: sshd
-    state: restarted
+  copy: content="{{ system_hostname | default(localhost) }}\n" dest="/etc/hostname"
+  register: hostname_ret
 
-- name: system - locale
+- name: set hostname to "{{ system_hostname }}"
   become: yes
-  shell: env-update && source /etc/profile
-
-- name: system - timezone
-  become: yes
-  shell: "emerge --config timezone-data"
+  hostname: name="{{ system_hostname | default(localhost) }}"
+  when: hostname_ret.changed
 
 ...

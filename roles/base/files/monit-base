@@ -1,0 +1,33 @@
+# sshd
+check process sshd with pidfile /var/run/sshd.pid
+    start program = "/bin/bash -c 'rc-service sshd restart'"
+    stop  program = "/bin/bash -c 'rc-service sshd stop'"
+    if failed port 47 protocol ssh then restart
+
+check file sshd-bin with path /usr/sbin/sshd
+    start program = "/bin/bash -c 'rc-service sshd restart'"
+    stop  program = "/bin/bash -c 'rc-service sshd stop'"
+    if changed sha1 checksum then restart
+    if does not exist then unmonitor
+
+check file sshd-config with path /etc/ssh/sshd_config
+    start program = "/bin/bash -c 'rc-service sshd restart'"
+    stop  program = "/bin/bash -c 'rc-service sshd stop'"
+    if changed sha1 checksum then restart
+    if does not exist then unmonitor
+
+# monit
+check file monit-bin with path /usr/bin/monit
+    if changed sha1 checksum then alert
+    if does not exist then unmonitor
+
+# cronie
+check process cronie with pidfile /var/run/crond.pid
+    start program = "/bin/bash -c 'rc-service cronie restart'"
+    stop  program = "/bin/bash -c 'rc-service cronie stop'"
+    
+check file cronie-bin with path /usr/sbin/crond
+    start program = "/bin/bash -c 'rc-service cronie restart'"
+    stop  program = "/bin/bash -c 'rc-service cronie stop'"
+    if changed sha1 checksum then restart
+    if does not exist then unmonitor

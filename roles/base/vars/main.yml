@@ -12,8 +12,15 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+
 # vars file for base
 
 sshd_config_path: "/etc/ssh/sshd_config"
+
+portage_config_path: "/etc/portage/make.conf"
+
+portage_profile_path: "/usr/portage/profiles/"
+
+portage_default_opts: "--autounmask-continue=y"
 
 ...
